@@ -289,7 +289,7 @@ python () {
     # check DEBIAN_SRC_URI
     debian_src_uri_orig = d.getVar('DEBIAN_SRC_URI', True).split()
     if len(debian_src_uri_orig) == 0:
-        bb.bbfatal('There is no data for DEBIAN_SRC_URI.')
+        bb.fatal('There is no data for DEBIAN_SRC_URI.')
         return
 
     pkgname = ""
@@ -301,7 +301,7 @@ python () {
             break
 
     if len(pkgname) == 0:
-        bb.bbfatal('There is no Debian source package name.')
+        bb.fatal('There is no Debian source package name.')
         return
 
     pkgver = d.getVar("DPV", True)
@@ -369,7 +369,7 @@ python () {
         debfile_urls += '%s/%s;name=%s%s ' % (u, info[0], nametag, prevent_apply)
 
     if not debfile_urls:
-        bb.bbfatal('Can not get URI of debian source packages.')
+        bb.fatal('Can not get URI of debian source packages.')
         return None
 
     # overwrite DEBIAN_SRC_URI
