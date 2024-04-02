@@ -30,6 +30,7 @@ do_install_ptest() {
 
 RDEPENDS_${PN}-ptest = "\
 	acl \
+	coreutils \
 	perl-module-cwd \
 	perl-module-file-basename \
 	perl-module-file-path \

@@ -8,6 +8,9 @@ testcase_dir=$(realpath ./test)
 EXT4_IMAGE=ext4.img
 EXT4_MOUNT_POINT=/mnt/ext4
 
+# Some tests expect the specific format for output of ls -dl
+export TIME_STYLE=iso
+
 trap 'rm -f ${EXT4_IMAGE}' EXIT
 
 dd if=/dev/zero of=${EXT4_IMAGE} bs=1M count=1
