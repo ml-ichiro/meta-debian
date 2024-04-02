@@ -44,21 +44,23 @@ cp -rf ./test/ $EXT4_MOUNT_POINT
 
 cd $EXT4_MOUNT_POINT/test/
 
-if sed -e 's!^bin:x:2:$!bin:x:2:daemon!' < /etc/group > gtmp; then
-	if cp /etc/group group.orig; then
-		cp gtmp /etc/group
+if [ -e test.group ] && [ -e test.passwd ]; then
+	if cp /etc/group group.orig && cp /etc/passwd passwd.orig; then
+		cp test.group /etc/group
+		cp test.passwd /etc/passwd
 		for i in $(find ${testcase_dir} -name "*.test"); do
 			${testcase_dir}/run ${i} | sed \
 				-e 's|^\[.*\] \(.*\) -- ok$|PASS: \1|' \
 				-e 's|^\[.*\] \(.*\) -- failed|FAIL: \1|'
 			done
 		cp group.orig /etc/group
+		cp passwd.orig /etc/passwd
 	else
-		echo "FAIL: couldn't save original group file."
+		echo "FAIL: couldn't save original group file or passwd file."
 		exit 1
 	fi
 else
-	echo "FAIL: couldn't create modified group file."
+	echo "FAIL: couldn't find group file or passwd file for ptest."
 	exit 1
 fi
 
