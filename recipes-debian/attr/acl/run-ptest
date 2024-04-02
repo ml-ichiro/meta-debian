@@ -5,44 +5,44 @@
 #umask 077
 
 testcase_dir=$(realpath ./test)
-EXT3_IMAGE=ext3.img
-EXT3_MOUNT_POINT=/mnt/ext3
+EXT4_IMAGE=ext4.img
+EXT4_MOUNT_POINT=/mnt/ext4
 
-trap 'rm -f ${EXT3_IMAGE}' EXIT
+trap 'rm -f ${EXT4_IMAGE}' EXIT
 
-dd if=/dev/zero of=${EXT3_IMAGE} bs=1M count=1
+dd if=/dev/zero of=${EXT4_IMAGE} bs=1M count=1
 if [ "$?" -eq 0 ]; then
-	echo "PASS: dump ext3.img"
+	echo "PASS: dump ext4.img"
 else
-	echo "FAIL: dump ext3.img"
+	echo "FAIL: dump ext4.img"
 	exit 1
 fi
 
-mkfs.ext3 -F ${EXT3_IMAGE}
+mkfs.ext4 -F ${EXT4_IMAGE}
 if [ "$?" -eq 0 ]; then
-	echo "PASS: mkfs.ext3 -F ext3.img"
+	echo "PASS: mkfs.ext4 -F ext4.img"
 else
-	echo "FAIL: mkfs.ext3 -F ext3.img"
+	echo "FAIL: mkfs.ext4 -F ext4.img"
 	exit 1
 fi
 
-if [ -d $EXT3_MOUNT_POINT ]; then
+if [ -d $EXT4_MOUNT_POINT ]; then
 	echo "mount point exist"
 else
-	mkdir -p $EXT3_MOUNT_POINT
+	mkdir -p $EXT4_MOUNT_POINT
 fi
 
-mount -o loop,rw,acl  ${EXT3_IMAGE} $EXT3_MOUNT_POINT
+mount -o loop,rw,acl  ${EXT4_IMAGE} $EXT4_MOUNT_POINT
 if [ "$?" -eq 0 ]; then
-	echo "PASS: mount ext3.img"
+	echo "PASS: mount ext4.img"
 else
-	echo "FAIL: mount ext3.img"
+	echo "FAIL: mount ext4.img"
 	exit 1
 fi
 
-cp -rf ./test/ $EXT3_MOUNT_POINT
+cp -rf ./test/ $EXT4_MOUNT_POINT
 
-cd $EXT3_MOUNT_POINT/test/
+cd $EXT4_MOUNT_POINT/test/
 
 if sed -e 's!^bin:x:2:$!bin:x:2:daemon!' < /etc/group > gtmp; then
 	if cp /etc/group group.orig; then
@@ -63,6 +63,6 @@ else
 fi
 
 cd -
-umount $EXT3_MOUNT_POINT
-rm -rf $EXT3_MOUNT_POINT
-rm $EXT3_IMAGE
+umount $EXT4_MOUNT_POINT
+rm -rf $EXT4_MOUNT_POINT
+rm $EXT4_IMAGE
