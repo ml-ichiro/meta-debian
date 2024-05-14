@@ -20,16 +20,23 @@ LIC_FILES_CHKSUM=" \
 "
 
 FILESPATH_append = ":${COREBASE}/meta/recipes-extended/procps/procps"
-SRC_URI += "file://sysctl.conf"
+SRC_URI += " \
+    file://sysctl.conf \
+    file://run-ptest \
+"
 
 DEPENDS = "ncurses"
 
-inherit autotools-brokensep gettext pkgconfig update-alternatives
+inherit autotools-brokensep gettext pkgconfig ptest update-alternatives
 
 EXTRA_OECONF = " \
 	--enable-skill \
 	--disable-modern-top \
 "
+
+do_compile_ptest() {
+    oe_runmake check TESTS=
+}
 
 do_install_append () {
 	install -d ${D}${base_bindir}
@@ -46,6 +53,39 @@ do_install_append () {
 		install -d ${D}${sysconfdir}/sysctl.d
 		ln -sf ../sysctl.conf ${D}${sysconfdir}/sysctl.d/99-sysctl.conf
 	fi
+}
+
+do_install_ptest() {
+    install -m 0755 ${S}/test-driver ${D}${PTEST_PATH}
+    install -m 0644 ${B}/Makefile ${D}${PTEST_PATH}
+    sed -i \
+        -e 's|^Makefile:.*$|Makefile:|g' \
+        -e 's|^abs_srcdir =.*|abs_srcdir = ${PTEST_PATH}|g' \
+        -e 's|^abs_top_srcdir =.*|abs_top_srcdir = ${PTEST_PATH}|g' \
+        ${D}${PTEST_PATH}/Makefile
+    cp -r ${B}/lib ${D}${PTEST_PATH}
+    install -m 0644 ${S}/lib/*.c ${D}${PTEST_PATH}/lib/
+
+    for p in ${bindir_progs} ${base_bindir_progs} ${base_sbindir_progs}; do
+        if [ -f ${B}/$p ] && [ -x ${B}/$p ]; then
+            install -m 0755 ${B}/$p ${D}${PTEST_PATH}
+        fi
+    done
+    for d in . ps top; do
+        install -d -m 0755 ${D}${PTEST_PATH}/$d
+        install -m 0755 ${B}/$d/.libs/* ${D}${PTEST_PATH}/$d
+    done
+
+    cp -r ${B}/testsuite ${D}${PTEST_PATH}
+    sed -i \
+        -e 's|^Makefile:.*$|Makefile:|g' \
+        -e 's|^abs_srcdir =.*|abs_srcdir = ${PTEST_PATH}/testsuite|g' \
+        -e 's|^abs_top_srcdir =.*|abs_top_srcdir = ${PTEST_PATH}|g' \
+        ${D}${PTEST_PATH}/testsuite/Makefile
+    rm -f ${D}${PTEST_PATH}/testsuite/site.exp
+
+    # handle multilib
+    sed -i 's|@libdir@|${libdir}|g' ${D}${PTEST_PATH}/run-ptest
 }
 
 CONFFILES_${PN} = "${sysconfdir}/sysctl.conf"
@@ -69,3 +109,5 @@ python __anonymous() {
     for prog in d.getVar('base_sbindir_progs', True).split():
         d.setVarFlag('ALTERNATIVE_LINK_NAME', prog, '%s/%s' % (d.getVar('base_sbindir', True), prog))
 }
+
+RDEPENDS_${PN}-ptest += "make gawk dejagnu"

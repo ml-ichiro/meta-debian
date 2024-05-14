@@ -1,0 +1,16 @@
+#!/bin/sh
+
+PROCPSLIB=@libdir@/procps
+cd ${PROCPSLIB}/ptest || exit 1
+
+LOG="${PROCPSLIB}/ptest/procps_ptest_$(date +%Y%m%d-%H%M%S).log"
+make -k check-TESTS | tee -a "${LOG}"
+make -C testsuite check-DEJAGNU
+cat testsuite/*.sum >> "${LOG}"
+
+echo "=== Test Summary ===" | tee -a "$LOG"
+for key in PASS SKIP XFAIL FAIL XPASS ERROR \
+    KFAIL KPASS UNTESTED UNRESOLVED UNSUPPORTED; do
+    count="$(grep -c "^$key: " "$LOG" | awk '{total += $1} END {print total}')"
+    echo "# $key: $count" | tee -a "$LOG"
+done
