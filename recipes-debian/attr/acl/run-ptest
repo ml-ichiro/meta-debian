@@ -13,16 +13,14 @@ export TIME_STYLE=iso
 
 trap 'rm -f ${EXT4_IMAGE}' EXIT
 
-dd if=/dev/zero of=${EXT4_IMAGE} bs=1M count=1
-if [ "$?" -eq 0 ]; then
+if dd if=/dev/zero of=${EXT4_IMAGE} bs=1M count=1; then
 	echo "PASS: dump ext4.img"
 else
 	echo "FAIL: dump ext4.img"
 	exit 1
 fi
 
-mkfs.ext4 -F ${EXT4_IMAGE}
-if [ "$?" -eq 0 ]; then
+if mkfs.ext4 -F ${EXT4_IMAGE}; then
 	echo "PASS: mkfs.ext4 -F ext4.img"
 else
 	echo "FAIL: mkfs.ext4 -F ext4.img"
@@ -35,8 +33,7 @@ else
 	mkdir -p $EXT4_MOUNT_POINT
 fi
 
-mount -o loop,rw,acl  ${EXT4_IMAGE} $EXT4_MOUNT_POINT
-if [ "$?" -eq 0 ]; then
+if mount -o loop,rw,acl ${EXT4_IMAGE} $EXT4_MOUNT_POINT; then
 	echo "PASS: mount ext4.img"
 else
 	echo "FAIL: mount ext4.img"
@@ -45,29 +42,28 @@ fi
 
 cp -rf ./test/ $EXT4_MOUNT_POINT
 
-cd $EXT4_MOUNT_POINT/test/
+(
+	cd $EXT4_MOUNT_POINT/test/ || { echo "FAIL: couldn't cd to $EXT4_MOUNT_POINT/test/"; exit 1; }
 
-if [ -e test.group ] && [ -e test.passwd ]; then
-	if cp /etc/group group.orig && cp /etc/passwd passwd.orig; then
-		cp test.group /etc/group
-		cp test.passwd /etc/passwd
-		for i in $(find ${testcase_dir} -name "*.test"); do
-			${testcase_dir}/run ${i} | sed \
+	if [ -e test.group ] && [ -e test.passwd ]; then
+		if cp /etc/group group.orig && cp /etc/passwd passwd.orig; then
+			cp test.group /etc/group
+			cp test.passwd /etc/passwd
+			find "${testcase_dir}" -name "*.test" | sort | xargs -I{} "${testcase_dir}/run" {} | sed \
 				-e 's|^\[.*\] \(.*\) -- ok$|PASS: \1|' \
 				-e 's|^\[.*\] \(.*\) -- failed|FAIL: \1|'
-			done
-		cp group.orig /etc/group
-		cp passwd.orig /etc/passwd
+			cp group.orig /etc/group
+			cp passwd.orig /etc/passwd
+		else
+			echo "FAIL: couldn't save original group file or passwd file."
+			exit 1
+		fi
 	else
-		echo "FAIL: couldn't save original group file or passwd file."
+		echo "FAIL: couldn't find group file or passwd file for ptest."
 		exit 1
 	fi
-else
-	echo "FAIL: couldn't find group file or passwd file for ptest."
-	exit 1
-fi
+)
 
-cd -
 umount $EXT4_MOUNT_POINT
 rm -rf $EXT4_MOUNT_POINT
 rm $EXT4_IMAGE
